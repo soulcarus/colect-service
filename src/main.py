@@ -1,97 +1,89 @@
-import sys
+import traceback
+import asyncio
 import signal
-import threading
-from typing import List, Dict
+
 from services.collector_service import CollectorService
 from factories.collector_factory import ApodiOpcuaFactory, BenatextilMQTTFactory
 from utils.logger import log
 from utils.config import load_industry_configs
 from utils.mongodb import cleanup_connections
 
-class CollectorApplication:
-    def __init__(self):
-        self.services: Dict[str, CollectorService] = {}
-        self.threads: Dict[str, threading.Thread] = {}
-        self.running = False
+from collections import defaultdict
 
-    def start(self):
+class AsyncCollectorApplication:
+    def __init__(self):
+        self.services = defaultdict(CollectorService)
+        self.running = False
+        self._stop_event = asyncio.Event()
+
+    async def start(self):
         """Start the collector application."""
         self.running = True
-        
-        # Load industry configurations
         industry_configs = load_industry_configs()
-        
-        # Create and start threads for each industry
+
+        tasks = []
         for industry_id, config in industry_configs.items():
             try:
-                # Create appropriate factory based on protocol
-                if config['protocol'] == 'ApodiOpcua':
-                    factory = ApodiOpcuaFactory(industry_id, config)
-                elif config['protocol'] == 'BenatextilMqtt':
-                    factory = BenatextilMQTTFactory(industry_id, config)
-                else:
+                factory = (
+                    ApodiOpcuaFactory(industry_id, config)
+                    if config['protocol'] == 'ApodiOpcua' else
+                    BenatextilMQTTFactory(industry_id, config)
+                    if config['protocol'] == 'BenatextilMqtt' else None
+                )
+
+                if factory is None:
                     log.error(f"Unsupported protocol {config['protocol']} for industry {industry_id}")
                     continue
 
-                # Create strategy using factory
                 strategy = factory.create_strategy()
-                
-                # Create service
-                service = CollectorService(strategy, industry_id)
-                self.services[industry_id] = service
-                
-                # Create and start thread
-                thread = threading.Thread(target=self._run_service, args=(industry_id,))
-                thread.daemon = True
-                thread.start()
-                self.threads[industry_id] = thread
-                
-                log.info(f"Started collection thread for industry {industry_id}")
+                self.services[industry_id] = CollectorService(strategy, industry_id)
+                tasks.append(self._run_service(industry_id))
+                log.info(f"Scheduled collection task for industry {industry_id}")
+            
             except Exception as e:
-                log.error(f"Failed to start thread for industry {industry_id}: {str(e)}")
+                log.error(f"Failed to start task for industry {industry_id}: {str(e)}")
+        
+        await asyncio.gather(*tasks, return_exceptions=True)
 
-    def stop(self):
+    async def stop(self):
         """Stop the collector application."""
         self.running = False
-        for industry_id, service in self.services.items():
-            service.stop()
-            self.threads[industry_id].join(timeout=5)  # Wait for thread to finish
+        for service in self.services.values():
+            await service.stop()
         log.info("All collection services stopped")
-        cleanup_connections()  # Close MongoDB connections
+        cleanup_connections()
 
-    def _run_service(self, industry_id: str):
+    async def _run_service(self, industry_id: str):
         """Run the collection service for a specific industry."""
         service = self.services[industry_id]
         try:
-            service.start()
+            await service.start()
+            await self._stop_event.wait()  # Keep the service running until stopped
         except Exception as e:
             log.error(f"Error in collection service for industry {industry_id}: {str(e)}")
         finally:
-            service.stop()
+            await service.stop()
 
-def signal_handler(signum, frame):
+def shutdown(app: AsyncCollectorApplication, loop: asyncio.AbstractEventLoop):
     """Handle shutdown signals."""
     log.info("Shutdown signal received")
-    app.stop()
-    sys.exit(0)
+    asyncio.ensure_future(app.stop(), loop=loop)
+    app._stop_event.set()  # Set the stop event to stop the _run_service tasks
 
 if __name__ == "__main__":
-    # Register signal handlers
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    app = AsyncCollectorApplication()
+    loop = asyncio.get_event_loop()
 
-    # Create and start application
-    app = CollectorApplication()
-    
+    # Register signal handlers
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, lambda: shutdown(app, loop))
+
     try:
-        app.start()
-        log.info("Collector application started")
-        
-        # Keep the main thread alive
-        while app.running:
-            signal.pause()
-    
+        log.info("Starting Collector application")
+        loop.run_until_complete(app.start())
     except Exception as e:
-        log.error(f"Application error: {str(e)}")
-        app.stop()
-        sys.exit(1)
+        log.error(f"Application error: {str(e)}")                
+        log.error(traceback.format_exc())
+    finally:
+        loop.run_until_complete(app.stop())
+        loop.close()
