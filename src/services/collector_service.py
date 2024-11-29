@@ -34,11 +34,13 @@ class CollectorService:
         while self._running:
             try:
                 self._collect_data()
-                sleep(30)  # Wait for 30 seconds before next collection
+                #sleep(30)  # Wait for 30 seconds before next collection
+                # apply pendulum
             except Exception as e:
                 log.error(f"Error in collection loop for industry {self.industry_id}: {str(e)}")
                 log.error(traceback.format_exc())
-                sleep(5)  # Wait a bit before retrying
+                #sleep(5)  # Wait a bit before retrying
+                # apply pendulum
 
     def _collect_data(self):
         """Collect and process data."""
