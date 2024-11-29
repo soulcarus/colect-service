@@ -24,6 +24,6 @@ def load_industry_configs() -> Dict[str, Any]:
 
 def _validate_industry_config(industry_id: str, config: Dict[str, Any]) -> bool:
     """Validate industry configuration."""
-    required_fields = {'protocol', 'server_link' if config.get('protocol') == 'opcua' else 'broker'}
+    required_fields = {'protocol', 'server_link' if config.get('protocol') == 'ApodiOpcua' else 'broker'}
     
     return all(field in config for field in required_fields)
