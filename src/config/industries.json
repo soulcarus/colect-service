@@ -1,4 +1,3 @@
 {
-    "cm1": {"protocol": "opcua", "server_link": "opc.tcp://127.0.0.10:4840", "tags" :["EIP.PLC04.QXR_IA_CM2_CM2CLA01M01S11_SP", "EIP.PLC04.QXR_IA_CM2_CM2DA01Y01Z21_SP"] },
-    "benatextil": {"protocol": "opcua", "server_link": "opc.tcp://127.0.0.10:4840", "tags" :["EIP.PLC04.QXR_IA_CM2_CM2CLA01M01S11_SP", "EIP.PLC04.QXR_IA_CM2_CM2DA01Y01Z21_SP"] }
+    "cm1": {"protocol": "ApodiOpcua", "server_link": "opc.tcp://127.0.0.10:4840", "tags" :["EIP.PLC04.QXR_IA_CM2_CM2CLA01M01S11_SP", "EIP.PLC04.QXR_IA_CM2_CM2DA01Y01Z21_SP"] }
 }
