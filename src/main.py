@@ -3,7 +3,7 @@ import signal
 import threading
 from typing import List, Dict
 from services.collector_service import CollectorService
-from factories.collector_factory import OPCUACollectorFactory, MQTTCollectorFactory
+from factories.collector_factory import ApodiOpcuaFactory, BenatextilMQTTFactory
 from utils.logger import log
 from utils.config import load_industry_configs
 from utils.mongodb import cleanup_connections
@@ -25,10 +25,10 @@ class CollectorApplication:
         for industry_id, config in industry_configs.items():
             try:
                 # Create appropriate factory based on protocol
-                if config['protocol'] == 'opcua':
-                    factory = OPCUACollectorFactory(industry_id, config)
-                elif config['protocol'] == 'mqtt':
-                    factory = MQTTCollectorFactory(industry_id, config)
+                if config['protocol'] == 'ApodiOpcua':
+                    factory = ApodiOpcuaFactory(industry_id, config)
+                elif config['protocol'] == 'BenatextilMqtt':
+                    factory = BenatextilMQTTFactory(industry_id, config)
                 else:
                     log.error(f"Unsupported protocol {config['protocol']} for industry {industry_id}")
                     continue
