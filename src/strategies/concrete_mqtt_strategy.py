@@ -4,9 +4,9 @@ from utils.logger import log
 import pendulum
 import asyncio
 
-from strategies.abstract_collector import CollectorStrategy
+from strategies.abstract_collector import AbstractStrategy
 
-class BenatextilMqttStrategy(CollectorStrategy):
+class MqttStrategy(AbstractStrategy):
     """MQTT collection strategy implementation."""
 
     def __init__(self, client: BenatextilClient, industry_id: str, config: Dict[str, Any]):

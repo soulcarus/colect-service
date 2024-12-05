@@ -1,11 +1,11 @@
 import traceback
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, Tuple
 from clients.apodi_client import APODIClient
 from utils.logger import log
 import pendulum
-from strategies.abstract_collector import CollectorStrategy
+from strategies.abstract_collector import AbstractStrategy
 
-class ApodiOpcuaStrategy(CollectorStrategy):
+class OpcuaStrategy(AbstractStrategy):
     """Strategy for collecting data from an OPC UA server."""
 
     def __init__(self, client: APODIClient, industry_id: str, config: Dict[str, Any]):
@@ -24,7 +24,7 @@ class ApodiOpcuaStrategy(CollectorStrategy):
 
     async def collect_data(self) -> Dict[str, Any]:
         if 'tags' not in self.config or not isinstance(self.config['tags'], list):
-            raise ValueError("Configuração inválida: 'tags' deve ser uma lista de IDs de tags.")
+            raise ValueError("Invalid configuration: 'tags' must be a list of tag IDs.")
 
         try:
             await self.client.connect()
