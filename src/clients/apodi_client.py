@@ -1,7 +1,8 @@
 from opcua import Client
 from typing import List, Any
+from clients.abstract_client import AbstractClient
 
-class APODIClient:
+class APODIClient(AbstractClient):
     def __init__(self, server_link: str):
         self.client = Client(server_link)
         self._connected = False
@@ -22,15 +23,15 @@ class APODIClient:
         """Get the objects node from the server."""
         return self.client.get_objects_node()
 
-    async  def get_values(self, nodes: List) -> List[Any]:
+    async def get_values(self, nodes: List) -> List[Any]:
         """Get values from multiple nodes."""
         return self.client.get_values(nodes)
 
     async def __enter__(self):
         """Context manager entry."""
-        self.connect()
+        await self.connect()
         return self
 
     async def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
-        self.disconnect()
+        await self.disconnect()

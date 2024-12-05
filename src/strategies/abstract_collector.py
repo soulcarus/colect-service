@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any
 import pendulum
-import asyncio
 
-class CollectorStrategy(ABC):
+class AbstractStrategy(ABC):
     """Abstract base class for collection strategies."""
 
     @abstractmethod

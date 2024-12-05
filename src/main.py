@@ -3,7 +3,8 @@ import asyncio
 import signal
 
 from services.collector_service import CollectorService
-from factories.collector_factory import ApodiOpcuaFactory, BenatextilMQTTFactory
+from factories.concrete_apodi_factory import ApodiFactory
+from factories.concrete_benatextil_factory import BenatextilFactory
 from utils.logger import log
 from utils.config import load_industry_configs
 from utils.mongodb import cleanup_connections
@@ -24,12 +25,7 @@ class AsyncCollectorApplication:
         tasks = []
         for industry_id, config in industry_configs.items():
             try:
-                factory = (
-                    ApodiOpcuaFactory(industry_id, config)
-                    if config['protocol'] == 'ApodiOpcua' else
-                    BenatextilMQTTFactory(industry_id, config)
-                    if config['protocol'] == 'BenatextilMqtt' else None
-                )
+                factory = self._create_factory(industry_id, config)
 
                 if factory is None:
                     log.error(f"Unsupported protocol {config['protocol']} for industry {industry_id}")
@@ -45,6 +41,15 @@ class AsyncCollectorApplication:
         
         await asyncio.gather(*tasks, return_exceptions=True)
 
+    def _create_factory(self, industry_id: str, config: dict):
+        """Create the appropriate factory based on the protocol."""
+        if config['protocol'] == 'ApodiOpcua':
+            return ApodiFactory(industry_id, config)
+        elif config['protocol'] == 'BenatextilMqtt':
+            return BenatextilFactory(industry_id, config)
+        else:
+            return None
+
     async def stop(self):
         """Stop the collector application."""
         self.running = False
@@ -58,7 +63,7 @@ class AsyncCollectorApplication:
         service = self.services[industry_id]
         try:
             await service.start()
-            await self._stop_event.wait()  # Keep the service running until stopped
+            await self._stop_event.wait()
         except Exception as e:
             log.error(f"Error in collection service for industry {industry_id}: {str(e)}")
         finally:
@@ -68,13 +73,12 @@ def shutdown(app: AsyncCollectorApplication, loop: asyncio.AbstractEventLoop):
     """Handle shutdown signals."""
     log.info("Shutdown signal received")
     asyncio.ensure_future(app.stop(), loop=loop)
-    app._stop_event.set()  # Set the stop event to stop the _run_service tasks
+    app._stop_event.set() 
 
 if __name__ == "__main__":
     app = AsyncCollectorApplication()
     loop = asyncio.get_event_loop()
 
-    # Register signal handlers
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, lambda: shutdown(app, loop))
 
@@ -87,3 +91,4 @@ if __name__ == "__main__":
     finally:
         loop.run_until_complete(app.stop())
         loop.close()
+

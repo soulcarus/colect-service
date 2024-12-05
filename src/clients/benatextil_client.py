@@ -1,7 +1,8 @@
 import paho.mqtt.client as mqtt
 from typing import Callable, Any
+from clients.abstract_client import AbstractClient
 
-class BenatextilClient:
+class BenatextilClient(AbstractClient):
     def __init__(self, broker: str, port: int = 1883):
         self.client = mqtt.Client()
         self.broker = broker
@@ -36,9 +37,9 @@ class BenatextilClient:
 
     async def __enter__(self):
         """Context manager entry."""
-        self.connect()
+        await self.connect()
         return self
 
     async def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
-        self.disconnect()
+        await self.disconnect()

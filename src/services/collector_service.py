@@ -3,13 +3,13 @@ import asyncio
 import traceback
 from typing import Dict, Any
 import pendulum
-from strategies.abstract_collector import CollectorStrategy
+from strategies.abstract_collector import AbstractStrategy
 from utils.logger import log
 
 class CollectorService:
     """Service for managing data collection."""
 
-    def __init__(self, strategy: CollectorStrategy, industry_id: str):
+    def __init__(self, strategy: AbstractStrategy, industry_id: str):
         self.strategy = strategy
         self.industry_id = industry_id
         self._running = False
