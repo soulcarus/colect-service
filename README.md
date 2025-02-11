@@ -1,17 +1,17 @@
-# Colect Service
-
-Industrial data collection service with multi-industry support. This service collects data from multiple industries simultaneously using different protocols (OPC UA, MQTT, etc.) and stores it in MongoDB.
-
-## Features
-
-- Multi-industry support with independent collection threads
-- Modular design using Strategy and Abstract Factory patterns
-- Support for multiple collection protocols
-- Real-time data collection every 30 seconds
-- Fault tolerance - failures in one industry don't affect others
-- Extensible architecture for adding new industries and protocols
-
-## Installation
-
-```bash
-pip install -r requirements.txt
+mt08-collector/
+├── cmd/
+│   └── collector/
+│       └── main.go           # Ponto de entrada e graceful shutdown
+├── internal/
+│   ├── opcua/                # Cliente OPC-UA
+│   │   ├── client.go         # Conexão e leitura de tags
+│   │   └── config.go         # Configurações fixas (URL, tags)
+│   ├── collector/            # Lógica de coleta cíclica
+│   │   ├── service.go        # Gerenciamento de ciclos e buffer
+│   │   └── processor.go      # Processamento e inserção no MongoDB
+│   └── storage/
+│       └── mongodb.go        # Operações de inserção em batch
+├── config/
+│   └── opcua.yaml            # Configurações do OPC-UA e MongoDB
+├── go.mod
+└── Dockerfile
