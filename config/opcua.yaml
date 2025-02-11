@@ -1,0 +1,15 @@
+opcua:
+  server_url: "opc.tcp://localhost:4840"
+  tags:
+    - "ns=2;i=6"  # NodeID do tag 'A'
+    - "ns=2;i=7"  # NodeID do tag 'B'
+    - "ns=2;i=8"  # NodeID do tag 'C'
+    - "ns=2;i=9"  # NodeID do tag 'D'
+    - "ns=2;i=10" # NodeID do tag 'E'
+
+collector:
+  cycle_duration: 1000ms    # Duração total do ciclo
+  samples_per_cycle: 4      # Número de amostras por ciclo
+
+mongodb:
+  uri: "mongodb://localhost:27017"
